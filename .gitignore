@@ -1,1 +1,8 @@
 /target
+config.toml
+.env
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
