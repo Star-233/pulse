@@ -46,7 +46,10 @@ pub fn login(client: &Client, config: &Config, wlanuserip: &str) -> Result<(), B
         ("desc_lb", "on"),
     ];
 
-    let resp = client.post(&login_url).form(&params).send()?;
+    let resp = client.post(&login_url)
+        .header("Referer", &login_url)
+        .form(&params)
+        .send()?;
     let body = resp.text()?;
 
     if body.contains("认证成功") || body.contains("LOGINSUCC") {

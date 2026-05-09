@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::io::{self, Write};
-use std::path::PathBuf;
+
+const CONFIG_PATH: &str = "config.toml";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
@@ -25,27 +26,17 @@ pub struct Network {
 
 impl Config {
     pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
-        let paths = [
-            PathBuf::from("config.toml"),
-            dirs_config_path(),
-        ];
-
-        for path in &paths {
-            if path.exists() {
-                let content = std::fs::read_to_string(path)?;
-                let config: Config = toml::from_str(&content)?;
-                println!("Loaded config from: {}", path.display());
-                return Ok(config);
-            }
+        if std::fs::metadata(CONFIG_PATH).is_ok() {
+            let content = std::fs::read_to_string(CONFIG_PATH)?;
+            let config: Config = toml::from_str(&content)?;
+            println!("Loaded config from: {}", CONFIG_PATH);
+            return Ok(config);
         }
 
         let config = Self::prompt()?;
-        if let Some(parent) = paths[1].parent() {
-            std::fs::create_dir_all(parent).ok();
-        }
         let toml_str = toml::to_string_pretty(&config)?;
-        std::fs::write(&paths[1], &toml_str)?;
-        println!("Config saved to: {}", paths[1].display());
+        std::fs::write(CONFIG_PATH, &toml_str)?;
+        println!("Config saved to: {}", CONFIG_PATH);
         Ok(config)
     }
 
@@ -82,9 +73,4 @@ fn prompt_input(prompt: &str) -> String {
     let mut input = String::new();
     io::stdin().read_line(&mut input).unwrap();
     input.trim().to_string()
-}
-
-fn dirs_config_path() -> PathBuf {
-    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-    PathBuf::from(home).join(".config").join("pulse").join("config.toml")
 }
