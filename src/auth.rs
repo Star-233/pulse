@@ -2,6 +2,7 @@ use reqwest::blocking::Client;
 use crate::config::Config;
 
 const REDIRECT_URL: &str = "http://www.msftconnecttest.com/redirect";
+const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36";
 
 pub fn login(client: &Client, config: &Config, wlanuserip: &str) -> Result<(), Box<dyn std::error::Error>> {
     let login_url = format!(
@@ -16,7 +17,14 @@ pub fn login(client: &Client, config: &Config, wlanuserip: &str) -> Result<(), B
     );
 
     println!("⏳ 正在连接认证页面...");
-    let _resp = client.get(&login_url).send()?;
+    let get_resp = client.get(&login_url)
+        .header("User-Agent", USER_AGENT)
+        .send()?;
+    let get_body = get_resp.text()?;
+    if get_body.contains("LOGINSUCC") {
+        println!("✅ 检测到已有有效会话，无需重复认证\n");
+        return Ok(());
+    }
 
     println!("⏳ 正在提交账号密码...");
     let params = [
@@ -48,11 +56,14 @@ pub fn login(client: &Client, config: &Config, wlanuserip: &str) -> Result<(), B
 
     let resp = client.post(&login_url)
         .header("Referer", &login_url)
+        .header("User-Agent", USER_AGENT)
         .form(&params)
         .send()?;
     let body = resp.text()?;
 
-    if body.contains("认证成功") || body.contains("LOGINSUCC") {
+    if body.contains("账号或密码错误") || body.contains("command.errors") {
+        Err("❌ 认证失败：账号或密码错误".into())
+    } else if body.contains("LOGINSUCC") {
         println!("✅ 认证成功！已连接到校园网\n");
         Ok(())
     } else {
