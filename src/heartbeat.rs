@@ -19,7 +19,9 @@ pub fn start(client: Client, config: Config, wlanuserip: String) {
         redirect = REDIRECT_URL,
     );
 
-    println!("Heartbeat started (interval: 5s, press Ctrl+C to stop)");
+    println!("💓 心跳保活已启动（每 5 秒检测一次）");
+    println!("💡 请保持程序运行，关闭此窗口会导致网络断开");
+    println!("💡 按 Ctrl+C 可安全退出\n");
 
     loop {
         thread::sleep(Duration::from_secs(5));
@@ -33,16 +35,9 @@ pub fn start(client: Client, config: Config, wlanuserip: String) {
                 ("wlanuserip", &wlanuserip),
             ]).send()
         {
-            Ok(resp) => {
-                if resp.status().is_success() {
-                    println!("Heartbeat OK");
-                } else {
-                    eprintln!("Heartbeat failed: HTTP {}", resp.status());
-                }
-            }
-            Err(e) => {
-                eprintln!("Heartbeat error: {}", e);
-            }
+            Ok(resp) if resp.status() == 200 => print!("."),
+            Ok(resp) => eprintln!("\n⚠️  心跳异常：HTTP {}", resp.status()),
+            Err(e) => eprintln!("\n⚠️  心跳失败：{}", e),
         }
     }
 }

@@ -8,3 +8,4 @@ reqwest = { version = "0.12", features = ["blocking", "cookies"] }
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 local-ip-address = "0.6"
+rpassword = "7"

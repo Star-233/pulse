@@ -15,10 +15,10 @@ pub fn login(client: &Client, config: &Config, wlanuserip: &str) -> Result<(), B
         url = REDIRECT_URL,
     );
 
-    println!("Connecting to portal...");
+    println!("⏳ 正在连接认证页面...");
     let _resp = client.get(&login_url).send()?;
 
-    println!("Authenticating...");
+    println!("⏳ 正在提交账号密码...");
     let params = [
         ("scheme", "https"),
         ("serverIp", "tomcat_server1:443"),
@@ -53,9 +53,9 @@ pub fn login(client: &Client, config: &Config, wlanuserip: &str) -> Result<(), B
     let body = resp.text()?;
 
     if body.contains("认证成功") || body.contains("LOGINSUCC") {
-        println!("Login successful!");
+        println!("✅ 认证成功！已连接到校园网\n");
         Ok(())
     } else {
-        Err("Login failed: unexpected response".into())
+        Err("❌ 认证失败，返回的页面未显示成功信息".into())
     }
 }
