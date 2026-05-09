@@ -1,11 +1,21 @@
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Pulse - Campus Network Auto Auth");
-    println!("Starting heartbeat service...");
+mod config;
+mod auth;
+mod heartbeat;
 
-    // TODO: 读取配置
-    // TODO: 检测网络连通性
-    // TODO: 发送认证请求
-    // TODO: 定期心跳保活
+fn main() {
+    let config = config::Config::load().expect("Failed to load config");
 
-    Ok(())
+    let wlanuserip = local_ip_address::local_ip()
+        .expect("Failed to detect local IP")
+        .to_string();
+    println!("Local IP: {}", wlanuserip);
+
+    let client = reqwest::blocking::Client::builder()
+        .cookie_store(true)
+        .build()
+        .expect("Failed to create HTTP client");
+
+    auth::login(&client, &config, &wlanuserip).expect("Login failed");
+
+    heartbeat::start(client, config, wlanuserip);
 }
